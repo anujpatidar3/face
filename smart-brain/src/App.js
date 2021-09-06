@@ -1,18 +1,15 @@
-import { Component } from 'react';
-import './App.css';
-import Navigation from './Components/Navigation/navigation.js'
-import Logo from './Components/logo/logo.js'
-import ImageLinkForm from './Components/ImageLinkForm/ImageLinkForm.js';
-import Rank from './Components/Rank/Rank.js';
-import FaceRecognition from './Components/FaceRegnition/FaceRecgnition.js';
-import Signin from './Components/SignIn/SignIn.js';
-import Register from './Components/Register/Register.js'
+import React, { Component } from 'react';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai';
+import FaceRecognition from './components/FaceRecognition/FaceRecognition';
+import Navigation from './components/Navigation/Navigation';
+import Signin from './components/Signin/Signin';
+import Register from './components/Register/Register';
+import Logo from './components/Logo/Logo';
+import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
+import Rank from './components/Rank/Rank';
+import './App.css';
 
-const app = new Clarifai.App({
-  apiKey:'fa5b451876ea4c3781848cef140e26fd'
-});
+
 
 const particlesOptions = {
   particles: {
@@ -24,6 +21,21 @@ const particlesOptions = {
       }
     }
   }
+}
+
+const initialState={
+  input: '',
+      imageUrl: '',
+      box: {},
+      route: 'signin',
+      isSignedIn: false,
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      }
 }
 
 class App extends Component {
@@ -78,19 +90,14 @@ class App extends Component {
 
   onButtonSubmit = () => {
     this.setState({imageUrl: this.state.input});
-    app.models
-      .predict(
-        // HEADS UP! Sometimes the Clarifai Models can be down or not working as they are constantly getting updated.
-        // A good way to check if the model you are using is up, is to check them on the clarifai website. For example,
-        // for the Face Detect Mode: https://www.clarifai.com/models/face-detection
-        // If that isn't working, then that means you will have to wait until their servers are back up. Another solution
-        // is to use a different version of their model that works like: `c0c0ac362b03416da06ab3fa36fb58e3`
-        // so you would change from:
-        // .predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-        // to:
-        // .predict('c0c0ac362b03416da06ab3fa36fb58e3', this.state.input)
-        Clarifai.FACE_DETECT_MODEL,
-        this.state.input)
+      fetch('http://localhost:3000/imageurl', {
+            method: 'post',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              input: this.state.input
+            })
+      })
+      .then(response=>response.json())
       .then(response => {
         console.log('hi', response)
         if (response) {
@@ -105,7 +112,7 @@ class App extends Component {
             .then(count => {
               this.setState(Object.assign(this.state.user, { entries: count}))
             })
-
+            .catch(console.log)
         }
         this.displayFaceBox(this.calculateFaceLocation(response))
       })
@@ -114,7 +121,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }
